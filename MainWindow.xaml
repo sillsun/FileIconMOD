@@ -1,0 +1,30 @@
+﻿<Window x:Class="FileIconMOD.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:FileIconMOD"
+        mc:Ignorable="d"
+        Title="小新图标修改工具" Height="200" Width="300" ResizeMode="NoResize" WindowStyle="SingleBorderWindow"  >
+    <Grid Background="AliceBlue">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="0.5*"/>
+            <ColumnDefinition Width="*"/>
+        </Grid.ColumnDefinitions>
+
+        <Label Grid.Row="0" Content="文件类型" HorizontalContentAlignment="Center" VerticalContentAlignment="Center" Margin="5"/>
+        <Label Grid.Row="1" Content="图标路径" HorizontalContentAlignment="Center" VerticalContentAlignment="Center" Margin="5"/>
+        <Label Grid.Row="2" Content="打开程序" HorizontalContentAlignment="Center" VerticalContentAlignment="Center" Margin="5"/>
+
+        <TextBox Name="TextBox_FileType" Grid.Row="0" Grid.Column="1" Margin="10" HorizontalContentAlignment="Left" VerticalContentAlignment="Center"/>
+        <TextBox Name="TextBox_IconPath" Grid.Row="1" Grid.Column="1" Margin="10" HorizontalContentAlignment="Left" VerticalContentAlignment="Center" PreviewDragOver="Text_FilePath_PreviewDragOver" PreviewDrop="Text_FilePath_PreviewDrop"/>
+        <TextBox Name="TextBox_OpenExe" Grid.Row="2" Grid.Column="1" Margin="10" HorizontalContentAlignment="Left" VerticalContentAlignment="Center" PreviewDragOver="Text_FilePath_PreviewDragOver" PreviewDrop="Text_FilePath_PreviewDrop"/>
+        <Button  Grid.Row="3" Grid.Column="1" Height="25" Width="70" Content="修改图标" Click="Button_Click"/>
+    </Grid> 
+</Window>
