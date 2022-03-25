@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -30,107 +30,96 @@ namespace FileIconMOD
             string fileType = TextBox_FileType.Text;
             string iconPath = TextBox_IconPath.Text;
             string openProgram = TextBox_OpenExe.Text;
-
-            if (fileType==""||fileType == null)
+            bool isClean = CheckBox_CleanCfg.IsChecked == true;
+            if (!CheckInput(ref fileType, ref iconPath, ref openProgram))
             {
-                MessageBox.Show("请输入需要修改图标的类型\n例如  .x ");
                 return;
+            }
+
+
+            StringBuilder argBuilder = new StringBuilder();
+            if (fileType != null)
+                argBuilder.Append($"-type \"{fileType}\" ");
+            if (iconPath != null)
+                argBuilder.Append($"-icon \"{iconPath}\" ");
+            if (openProgram != null)
+                argBuilder.Append($"-open \"{openProgram}\" ");
+            if (isClean)
+                argBuilder.Append($"-clean");
+            System.Diagnostics.Process.Start("FileIconConsole.exe", argBuilder.ToString());
+
+
+        }
+
+        private bool CheckInput(ref string fileType, ref string iconPath, ref string openProgram)
+        {
+            if (fileType == "" || fileType == null)
+            {
+                MessageBox.Show("请输入需要修改图标的类型\n例如  .xlsx或将文件拖入 ");
+                return false;
+            }
+            else if (fileType.ToLower() == ".lnk" || fileType.ToLower() == "lnk"
+                  || fileType.ToLower() == ".exe" || fileType.ToLower() == "exe")
+            {
+                MessageBox.Show("本工具不支持修改.lnk和.exe文件的图标");
+                return false;
             }
             else
             {
-                if (fileType.IndexOf(".")<0)
+                if (fileType.IndexOf(".") < 0)
                 {
                     fileType = "." + fileType;
                 }
             }
-            string savePath = @"C:\Windows\System32\xxicon";
-            string iconName = "";
-            if (iconPath!=""&& iconPath!=null )
-            {
-                if (!System.IO.File.Exists(iconPath))
-                {
-                    MessageBox.Show("图标路径有误，请检查\n提示：将图标拖入文本内即可");
-                    return;
-                }
 
-                if (!System.IO.Directory.Exists(savePath))
+            if (CheckBox_IconPath.IsChecked == true)
+            {
+                if (string.IsNullOrWhiteSpace(iconPath))
                 {
-                    try
+                    iconPath = "";
+                }
+                else if (!File.Exists(iconPath))
+                {
+                    MessageBox.Show("图标路径有误\n提示：可以输入图标路径或将图标文件拖入");
+                    return false;
+
+                }
+                else
+                {
+                    var iconFile = new FileInfo(iconPath);
+                    var iconExt = iconFile.Extension.ToLower();
+                    if (iconExt != ".bmp" && iconExt != ".jpg" && iconExt != ".jpeg" && iconExt != ".png")
                     {
-                        System.IO.Directory.CreateDirectory(savePath);
-                    }
-                    catch (Exception)
-                    {
-                        MessageBox.Show(savePath + "\r\n" + "文件夹创建失败");
-                        return;
+                        MessageBox.Show("图标格式不支持\n提示：当前支持.bmp .jpg .jpeg .png格式的图标");
+                        return false;
                     }
                 }
-                //将图标复制到指定的文件夹
-                 iconName =  System.IO.Path.GetFileName(iconPath);//返回带扩展名的文件名 
-                System.IO.File.Copy(iconPath, savePath+"\\"+iconName,true);
-            }
-
-            if (openProgram!="" && openProgram!=null )
-            {
-                if (!System.IO.File.Exists(openProgram))
-                {
-                    MessageBox.Show("程序路径有误，请检查\n提示：将程序拖入文本内即可");
-                    return;
-                }
-            }
-            //创建reg文件
-            string fileName = fileType.Substring(1, fileType.Length - 1) +"_xxfile";
-            string regTxt= "Windows Registry Editor Version 5.00\r\n\r\n";
-
-            //HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Explorer\FileExts\
-
-            regTxt += ("[-HKEY_CURRENT_USER\\Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\FileExts\\" + fileType + "]\r\n\r\n");
-
-            regTxt += ("[HKEY_CLASSES_ROOT\\" + fileType + "]\r\n");
-            regTxt += ("@=\"" + ToRegString(fileName) + "\"\r\n\r\n" );
-            regTxt += ("[HKEY_CLASSES_ROOT\\" + fileName + "]\r\n\r\n");
-            //[HKEY_CLASSES_ROOT\mdfile\DefaultIcon]
-            regTxt += ("[HKEY_CLASSES_ROOT\\" + fileName + "\\DefaultIcon]\r\n");
-            if (iconPath!="")
-            {
-                regTxt += ("@=\"" + ToRegString(savePath + "\\" + iconName) + "\"\r\n\r\n");
             }
             else
             {
-                regTxt += "\r\n";
+                iconPath = null;
             }
 
-            //[HKEY_CLASSES_ROOT\mdfile\shell]
-            //[HKEY_CLASSES_ROOT\mdfile\shell\open]
-            //[HKEY_CLASSES_ROOT\mdfile\shell\open\command]
-            regTxt += ("[HKEY_CLASSES_ROOT\\" + fileName + "\\shell]\r\n\r\n");
-            regTxt += ("[HKEY_CLASSES_ROOT\\" + fileName + "\\shell\\open]\r\n\r\n");
-            regTxt += ("[HKEY_CLASSES_ROOT\\" + fileName + "\\shell\\open\\command]\r\n");
-            if (openProgram != "")
+            if (CheckBox_OpenExe.IsChecked == true)
             {
-                regTxt += ("@=\"" + ToRegString("\""+openProgram+ "\"") + " \\\"%1\\\"\"" );
+                if (string.IsNullOrWhiteSpace(openProgram))
+                {
+                    openProgram = "";
+                }
+                else if (!File.Exists(openProgram))
+                {
+                    MessageBox.Show("程序路径错误\n提示：可以输入程序路径或将程序文件拖入");
+                    return false;
+                }
             }
             else
             {
-                regTxt += "\r\n";
+                openProgram = null;
             }
-
-
-            try
-            {
-                using (StreamWriter sr = new StreamWriter("run.reg", false, Encoding.Default))
-                {
-                    sr.Write(regTxt);
-                }
-   
-                System.Diagnostics.Process.Start("regedit.exe", "/s run.reg");
-                System.Diagnostics.Process.Start("re.bat");
-            }
-            catch (Exception)
-            {
-
-            }
+            return true;
         }
+
+
 
         private void Text_FilePath_PreviewDragOver(object sender, DragEventArgs e)
         {
@@ -140,15 +129,45 @@ namespace FileIconMOD
 
         private void Text_FilePath_PreviewDrop(object sender, DragEventArgs e)
         {
-            ((TextBox)sender).Text = ((string[])e.Data.GetData(DataFormats.FileDrop))[0];
+            var txb = ((TextBox)sender);
+            txb.Text = ((string[])e.Data.GetData(DataFormats.FileDrop))[0];
+
+            txb.Focus();
+        }
+        private void TextBox_FilePath_TextChanged(object sender, TextChangedEventArgs e)
+        {
+            var txb = ((TextBox)sender);
         }
 
-        private string ToRegString(string word)
+        private void Text_FileType_PreviewDragOver(object sender, DragEventArgs e)
         {
-            string newWord = word;
-            newWord = newWord.Replace("\\","\\\\");
-            newWord = newWord.Replace("\"", "\\\"");
-            return newWord;
+            e.Effects = DragDropEffects.Copy;
+            e.Handled = true;
+        }
+
+        private void Text_FileType_PreviewDrop(object sender, DragEventArgs e)
+        {
+            var path = ((string[])e.Data.GetData(DataFormats.FileDrop))[0];
+
+
+            if (File.Exists(path))
+            {
+                var file = new FileInfo(path);
+                var ext = file.Extension.ToLower();
+
+                ((TextBox)sender).Text = ext;
+
+
+            }
+
+        }
+
+
+        private void TextBox_FileType_LostFocus(object sender, RoutedEventArgs e)
+        {
+            var txb = ((TextBox)sender);
+            txb.SelectionStart = txb.Text.Length;
+
         }
     }
 }
